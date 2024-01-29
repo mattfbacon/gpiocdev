@@ -10,7 +10,6 @@ use crate::{AbiVersion, Error, Result};
 use gpiocdev_uapi::v1;
 #[cfg(feature = "uapi_v2")]
 use gpiocdev_uapi::v2;
-use nohash_hasher::IntMap;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -56,7 +55,7 @@ pub struct Config {
     pub(super) base: line::Config,
 
     /// The configuration for the lines.
-    pub(super) lcfg: IntMap<Offset, line::Config>,
+    pub(super) lcfg: HashMap<Offset, line::Config>,
 
     /// The set of lines described by this configuration, in order added.
     pub(super) offsets: Vec<Offset>,
@@ -519,9 +518,9 @@ impl Config {
     #[cfg(any(feature = "uapi_v2", not(feature = "uapi_v1")))]
     pub(crate) fn to_v2(&self) -> Result<v2::LineConfig> {
         // debounced and flags provide maps from attr values to bitmap of lines using those values.
-        let mut debounced: IntMap<u32, LineSet> = IntMap::default();
-        let mut flags: HashMap<v2::LineFlags, LineSet> = HashMap::default();
-        let mut values: v2::LineValues = Default::default();
+        let mut debounced = HashMap::new();
+        let mut flags = HashMap::new();
+        let mut values = v2::LineValues::default();
         for (idx, offset) in self.offsets.iter().enumerate() {
             // unwrap is safe here as offsets match lcfg keys
             let lcfg = self.lcfg.get(offset).unwrap();
@@ -618,9 +617,6 @@ impl Config {
         Ok(cfg)
     }
 }
-
-#[cfg(feature = "uapi_v2")]
-type LineSet = u64;
 
 /// An iterator over the currently selected lines in a Config.
 // This is strictly internal as external usage could invalidate the safety contract.

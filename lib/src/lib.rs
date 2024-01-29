@@ -61,7 +61,6 @@
 #[cfg(not(any(feature = "uapi_v1", feature = "uapi_v2")))]
 compile_error!("Either feature \"uapi_v1\" or \"uapi_v2\" must be enabled for this crate.");
 
-use chrono::{DateTime, TimeZone, Utc};
 #[cfg(any(feature = "uapi_v1", feature = "uapi_v2"))]
 use gpiocdev_uapi as uapi;
 #[cfg(feature = "serde")]
@@ -70,6 +69,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::Range;
 use std::path::PathBuf;
+use std::time::{Duration, SystemTime};
 
 /// Types and functions specific to chips.
 pub mod chip;
@@ -409,20 +409,18 @@ impl fmt::Display for AbiVersion {
 
 /// A moment in time in UTC.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Timestamp(DateTime<Utc>);
+pub struct Timestamp(SystemTime);
 
 impl Timestamp {
     /// Create a Timestamp from the number of nanoseconds.
     ///
     /// Suitable for **CLOCK_REALTIME** clock sources.
     pub fn from_nanos(t: u64) -> Self {
-        let sec = (t / 1000000000) as i64;
-        let nsec = (t as u32) % 1000000000;
-        Timestamp(Utc.timestamp_opt(sec, nsec).unwrap())
+        Self(SystemTime::UNIX_EPOCH + Duration::from_nanos(t))
     }
 }
 
-impl From<Timestamp> for DateTime<Utc> {
+impl From<Timestamp> for SystemTime {
     fn from(ts: Timestamp) -> Self {
         ts.0
     }
