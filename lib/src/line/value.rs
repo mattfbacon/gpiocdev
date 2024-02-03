@@ -38,6 +38,15 @@ impl Value {
             Value::Inactive => Value::Active,
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub fn active(self) -> bool {
+        match self {
+            Self::Active => true,
+            Self::Inactive => false,
+        }
+    }
 }
 
 impl std::fmt::Display for Value {
